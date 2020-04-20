@@ -70,17 +70,17 @@ class CYCLES_PT_color_bleeding(Panel):
         flow = layout.grid_flow(align=True)
         col = flow.column()
         # col = layout.box()
-        col.operator("ccb.append", text="Add Nodes")
+        col.operator("ccb.append", text="Add ColorBleeding")
         layout.prop(ccb, "ccb_brightness", text="Brightness")
         layout.prop(ccb, "ccb_saturation", text="Saturation")
         layout.prop(ccb, "ccb_factor", text="Factor")
-        col.operator("ccb.rm", text="Remove Nodes")
+        col.operator("ccb.rm", text="Remove ColorBleeding")
 
 
 class RemoveColorBleedingAppend(Operator):
     bl_idname = "ccb.rm"
     bl_label = "Remove Cycles Color Bleeding"
-    bl_description = "Remove node ColorBleeding to selected objects"
+    bl_description = "Remove ColorBleeding node to selected objects"
 
     def execute(self, context):
         objects = bpy.context.selected_objects
@@ -111,7 +111,7 @@ class RemoveColorBleedingAppend(Operator):
 class CyclesColorBleedingAppend(Operator):
     bl_idname = "ccb.append"
     bl_label = "Cycles Color Bleeding"
-    bl_description = "Add node ColorBleeding to selected objects"
+    bl_description = "Add ColorBleeding node to selected objects"
 
     def execute(self, context):        
         objects = bpy.context.selected_objects
