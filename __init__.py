@@ -96,6 +96,8 @@ class RemoveColorBleedingAppend(Operator):
                                     mat_izquierda = ColorBleeding.inputs['Shader'].links[0].from_node
                                     # elimino el material ColorBleeding:
                                     mat.material.node_tree.nodes.remove(ColorBleeding)
+                                    # los pongo en su sitio:
+                                    materialOutput.location.x = materialOutput.location.x - 200
                                     # ahora los reconecto:
                                     matOIn = materialOutput.inputs['Surface']
                                     mat_izquierda_out = mat_izquierda.outputs[0]
