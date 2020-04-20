@@ -79,7 +79,7 @@ class CYCLES_PT_color_bleeding(Panel):
 
 class CyclesColorBleedingAppend(Operator):
     bl_idname = "ccb.append"
-    bl_label = "Cycles Color Bleeding Append"
+    bl_label = "Add node ColorBleeding to selected objects"
     bl_description = ""
 
     def execute(self, context):
