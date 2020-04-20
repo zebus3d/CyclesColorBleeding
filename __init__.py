@@ -26,6 +26,19 @@ def importNodeGroup(nodeGroup):
         bpy.ops.wm.append(filename=nodeGroup, directory=path)
 
 
+# def rm_node(mat):
+#     # sobreescribir el contexto:
+#     for window in bpy.context.window_manager.windows:
+#         screen = window.screen
+#         for area in screen.areas:
+#             if area.type == 'NODE_EDITOR':
+#                 override = {'window': window, 'screen': screen, 'area': area}
+#                 bpy.ops.node.select_all(override, action='DESELECT')
+#                 ColorBleeding = mat.material.node_tree.nodes['ColorBleeding']
+#                 ColorBleeding.select = True
+#                 ColorBleeding.delete_reconnect(override)
+
+
 class myProperties(PropertyGroup):
     ccb_brightness : bpy.props.FloatProperty(
         name="Brightness",
@@ -74,102 +87,136 @@ class CYCLES_PT_color_bleeding(Panel):
         layout.prop(ccb, "ccb_brightness", text="Brightness")
         layout.prop(ccb, "ccb_saturation", text="Saturation")
         layout.prop(ccb, "ccb_factor", text="Factor")
+        col.operator("ccb.rm", text="Remove Nodes")
 
+
+class RemoveColorBleedingAppend(Operator):
+    bl_idname = "ccb.rm"
+    bl_label = "Remove Cycles Color Bleeding"
+    bl_description = "Remove node ColorBleeding to selected objects"
+
+    def execute(self, context):
+        objects = bpy.context.selected_objects
+        if len(objects):
+            for ob in objects:
+                if ob.type == 'MESH':
+                    for mat in ob.material_slots:
+                        if mat.name:
+                            if mat.material.node_tree:
+                                if 'ColorBleeding' in mat.material.node_tree.nodes:
+                                    ColorBleeding = mat.material.node_tree.nodes['ColorBleeding']
+                                    materialOutput = mat.material.node_tree.nodes['Material Output']
+                                    mat_izquierda = ColorBleeding.inputs['Shader'].links[0].from_node
+                                    # elimino el material ColorBleeding:
+                                    mat.material.node_tree.nodes.remove(ColorBleeding)
+                                    # ahora los reconecto:
+                                    matOIn = materialOutput.inputs['Surface']
+                                    mat_izquierda_out = mat_izquierda.outputs[0]
+                                    mat.material.node_tree.links.new(mat_izquierda_out, matOIn)
+        else:
+            self.report({'WARNING'}, 'Only can remove node from selected objects!')
+        
+        return {'FINISHED'}
 
 
 class CyclesColorBleedingAppend(Operator):
     bl_idname = "ccb.append"
-    bl_label = "Add node ColorBleeding to selected objects"
-    bl_description = ""
+    bl_label = "Cycles Color Bleeding"
+    bl_description = "Add node ColorBleeding to selected objects"
 
-    def execute(self, context):
+    def execute(self, context):        
+        objects = bpy.context.selected_objects
 
         common_input_color_names = ['Base Color', 'Color']
-        nodeGroup = "ColorBleeding"
-        importNodeGroup(nodeGroup)
+        nodeGroup = "ColorBleeding"        
+        
+        if len(objects):
+            importNodeGroup(nodeGroup)
+            for ob in objects:
+                if ob.type == 'MESH':
+                    for mat in ob.material_slots:
+                        if mat.name:
+                            if mat.material.node_tree:
+                                # creo el nodo de ColorBleeding para cada uno de los materiales 
+                                # si no existe ya:
+                                if 'ColorBleeding' not in mat.material.node_tree.nodes:
+                                    ColorBleeding = mat.material.node_tree.nodes.new("ShaderNodeGroup")
+                                    ColorBleeding.name = 'ColorBleeding'
+                                    ColorBleeding.label = 'ColorBleeding'
+                                    ColorBleeding.node_tree = bpy.data.node_groups['ColorBleeding']
+                                    # mo = bpy.context.selected_objects[0].material_slots['Material'].material.node_tree.nodes['Material Output']
+                                    # bpy.context.selected_objects[0].material_slots['Material'].material.node_tree.nodes['Material Output'].inputs['Surface'].links[0].from_node
+                                    materialOutput = mat.material.node_tree.nodes['Material Output']
+                                    mat_izquierda = materialOutput.inputs['Surface'].links[0].from_node
 
-        for ob in bpy.data.objects:
-            if ob.type == 'MESH':
-                for mat in ob.material_slots:
-                    if mat.name:
-                        if mat.material.node_tree:
-                            # creo el nodo de ColorBleeding para cada uno de los materiales 
-                            # si no existe previamente:
-                            if not any(n.name == "ColorBleeding" for n in mat.material.node_tree.nodes):
-                                ColorBleeding = mat.material.node_tree.nodes.new("ShaderNodeGroup")
-                                ColorBleeding.name = 'ColorBleeding'
-                                ColorBleeding.label = 'ColorBleeding'
-                                ColorBleeding.node_tree = bpy.data.node_groups['ColorBleeding']
-                                # mo = bpy.context.selected_objects[0].material_slots['Material'].material.node_tree.nodes['Material Output']
-                                # bpy.context.selected_objects[0].material_slots['Material'].material.node_tree.nodes['Material Output'].inputs['Surface'].links[0].from_node
-                                materialOutput = mat.material.node_tree.nodes['Material Output']
-                                mat_izquierda = materialOutput.inputs['Surface'].links[0].from_node
+                                    # mat_izquierda_socket = materialOutput.inputs['Surface'].links[0].from_socket.type
+                                    # los pongo en su sitio:
+                                    loc = materialOutput.location
+                                    ColorBleeding.location = loc
+                                    materialOutput.location.x = materialOutput.location.x + 200
+                                    # ahora los conecto:
+                                    ccb_in = ColorBleeding.inputs['Shader']
+                                    ccb_out = ColorBleeding.outputs['Shader']
+                                    matOIn = materialOutput.inputs['Surface']
+                                    mat_izquierda_out = mat_izquierda.outputs[0]
+                                    mat.material.node_tree.links.new(matOIn, ccb_out)
+                                    mat.material.node_tree.links.new(ccb_in, mat_izquierda_out)
 
-                                # mat_izquierda_socket = materialOutput.inputs['Surface'].links[0].from_socket.type
-                                # los pongo en su sitio:
-                                loc = materialOutput.location
-                                ColorBleeding.location = loc
-                                materialOutput.location.x = materialOutput.location.x + 200
-                                # ahora los conecto:
-                                ccb_in = ColorBleeding.inputs['Shader']
-                                ccb_out = ColorBleeding.outputs['Shader']
-                                matOIn = materialOutput.inputs['Surface']
-                                mat_izquierda_out = mat_izquierda.outputs[0]
-                                mat.material.node_tree.links.new(matOIn, ccb_out)
-                                mat.material.node_tree.links.new(ccb_in, mat_izquierda_out)
-
-                                for i in mat_izquierda.inputs:
-                                    if i.name in common_input_color_names:
-                                        if len(i.links):
-                                            # print('conectado')
-                                            # si tiene un color conectado se lo conecto:
-                                            ccb_in = ColorBleeding.inputs['Color']
-                                            mat_izquierda = mat_izquierda.inputs[i.name].links[0].from_node
-                                            mat_izquierda_out = mat_izquierda.outputs[0]
-                                            mat.material.node_tree.links.new(ccb_in, mat_izquierda_out)
-                                        else:
-                                            # print('desconectado')
-                                            mat_izquierda = mat_izquierda.inputs[i.name]
-                                            ccb_in = ColorBleeding.inputs['Color'].default_value = mat_izquierda.default_value
+                                    for i in mat_izquierda.inputs:
+                                        if i.name in common_input_color_names:
+                                            if len(i.links):
+                                                # print('conectado')
+                                                # si tiene un color conectado se lo conecto:
+                                                ccb_in = ColorBleeding.inputs['Color']
+                                                mat_izquierda = mat_izquierda.inputs[i.name].links[0].from_node
+                                                mat_izquierda_out = mat_izquierda.outputs[0]
+                                                mat.material.node_tree.links.new(ccb_in, mat_izquierda_out)
+                                            else:
+                                                # print('desconectado')
+                                                mat_izquierda = mat_izquierda.inputs[i.name]
+                                                ccb_in = ColorBleeding.inputs['Color'].default_value = mat_izquierda.default_value
 
 
-                                # Creo los drivers:
-                                ########################
-                                # Driver Brightness:
-                                driver = ColorBleeding.inputs['Brightness'].driver_add("default_value").driver
-                                driver.variables.new()
-                                driver.variables[0].name = 'ccb_brightness'
-                                driver.variables[0].type= 'SINGLE_PROP'
-                                driver.variables['ccb_brightness'].targets[0].id_type = 'SCENE'
-                                driver.variables['ccb_brightness'].targets[0].id = bpy.data.scenes['Scene']
-                                driver.variables['ccb_brightness'].targets[0].data_path = 'ccb.ccb_brightness'
-                                driver.expression = "ccb_brightness"
-                                # Driver Saturation:
-                                driver = ColorBleeding.inputs['Saturation'].driver_add("default_value").driver
-                                driver.variables.new()
-                                driver.variables[0].name = 'ccb_saturation'
-                                driver.variables[0].type= 'SINGLE_PROP'
-                                driver.variables['ccb_saturation'].targets[0].id_type = 'SCENE'
-                                driver.variables['ccb_saturation'].targets[0].id = bpy.data.scenes['Scene']
-                                driver.variables['ccb_saturation'].targets[0].data_path = 'ccb.ccb_saturation'
-                                driver.expression = "ccb_saturation"
-                                # Driver Factor:
-                                driver = ColorBleeding.inputs['Factor'].driver_add("default_value").driver
-                                driver.variables.new()
-                                driver.variables[0].name = 'ccb_factor'
-                                driver.variables[0].type= 'SINGLE_PROP'
-                                driver.variables['ccb_factor'].targets[0].id_type = 'SCENE'
-                                driver.variables['ccb_factor'].targets[0].id = bpy.data.scenes['Scene']
-                                driver.variables['ccb_factor'].targets[0].data_path = 'ccb.ccb_factor'
-                                driver.expression = "ccb_factor"
-
+                                    # Creo los drivers:
+                                    ########################
+                                    # Driver Brightness:
+                                    driver = ColorBleeding.inputs['Brightness'].driver_add("default_value").driver
+                                    driver.variables.new()
+                                    driver.variables[0].name = 'ccb_brightness'
+                                    driver.variables[0].type= 'SINGLE_PROP'
+                                    driver.variables['ccb_brightness'].targets[0].id_type = 'SCENE'
+                                    driver.variables['ccb_brightness'].targets[0].id = bpy.data.scenes['Scene']
+                                    driver.variables['ccb_brightness'].targets[0].data_path = 'ccb.ccb_brightness'
+                                    driver.expression = "ccb_brightness"
+                                    # Driver Saturation:
+                                    driver = ColorBleeding.inputs['Saturation'].driver_add("default_value").driver
+                                    driver.variables.new()
+                                    driver.variables[0].name = 'ccb_saturation'
+                                    driver.variables[0].type= 'SINGLE_PROP'
+                                    driver.variables['ccb_saturation'].targets[0].id_type = 'SCENE'
+                                    driver.variables['ccb_saturation'].targets[0].id = bpy.data.scenes['Scene']
+                                    driver.variables['ccb_saturation'].targets[0].data_path = 'ccb.ccb_saturation'
+                                    driver.expression = "ccb_saturation"
+                                    # Driver Factor:
+                                    driver = ColorBleeding.inputs['Factor'].driver_add("default_value").driver
+                                    driver.variables.new()
+                                    driver.variables[0].name = 'ccb_factor'
+                                    driver.variables[0].type= 'SINGLE_PROP'
+                                    driver.variables['ccb_factor'].targets[0].id_type = 'SCENE'
+                                    driver.variables['ccb_factor'].targets[0].id = bpy.data.scenes['Scene']
+                                    driver.variables['ccb_factor'].targets[0].data_path = 'ccb.ccb_factor'
+                                    driver.expression = "ccb_factor"
+        else:
+            self.report({'WARNING'}, 'Only can add node to selected objects!')
+        
         return {'FINISHED'}
 
 
 all_classes = [
     myProperties,
     CyclesColorBleedingAppend,
-    CYCLES_PT_color_bleeding
+    CYCLES_PT_color_bleeding,
+    RemoveColorBleedingAppend
 ]
 
 def register():
