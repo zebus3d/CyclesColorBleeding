@@ -1,7 +1,6 @@
 
 import bpy
 
-
 bl_info = {
     "name": "CyclesColorBleeding",
     "author": "Jorge Hernandez Melendez",
@@ -14,6 +13,9 @@ bl_info = {
     "category": "Cycles",
     }
 
+from bpy.props import (FloatProperty, PointerProperty)
+from bpy.types import (Panel, Operator, PropertyGroup)
+
 
 def importNodeGroup(nodeGroup):
     # si no esta ya importado el node group lo importo:
@@ -24,7 +26,30 @@ def importNodeGroup(nodeGroup):
         bpy.ops.wm.append(filename=nodeGroup, directory=path)
 
 
-class CYCLES_PT_color_bleeding(bpy.types.Panel):
+class myProperties(PropertyGroup):
+    ccb_brightness : bpy.props.FloatProperty(
+        name="Brightness",
+        soft_min=0.0,
+        soft_max=1.0,
+        precision=3,
+        description="")
+
+    ccb_saturation : bpy.props.FloatProperty(
+        name="Saturation",
+        soft_min=0.0,
+        soft_max=1.0,
+        precision=3,
+        description="")
+    
+    ccb_factor : bpy.props.FloatProperty(
+        name="Factor",
+        soft_min=0.0,
+        soft_max=1.0,
+        precision=3,
+        description="")
+
+
+class CYCLES_PT_color_bleeding(Panel):
     bl_label = "Color Bleeding"
     bl_category = "Color Bleeding"
     bl_space_type = "VIEW_3D"
@@ -32,16 +57,24 @@ class CYCLES_PT_color_bleeding(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
+
+        scene = context.scene
+        ccb = scene.ccb
+
         layout.use_property_split = True
         layout.use_property_decorate = False
-        scene = context.scene
+
         flow = layout.grid_flow(align=True)
         col = flow.column()
-        col = layout.box()
+        # col = layout.box()
         col.operator("ccb.append", text="Add Nodes")
+        layout.prop(ccb, "ccb_brightness", text="Brightness")
+        layout.prop(ccb, "ccb_saturation", text="Saturation")
+        layout.prop(ccb, "ccb_factor", text="Factor")
 
 
-class CyclesColorBleedingAppend(bpy.types.Operator):
+
+class CyclesColorBleedingAppend(Operator):
     bl_idname = "ccb.append"
     bl_label = "Cycles Color Bleeding Append"
     bl_description = ""
@@ -96,10 +129,42 @@ class CyclesColorBleedingAppend(bpy.types.Operator):
                                             mat_izquierda = mat_izquierda.inputs[i.name]
                                             ccb_in = ColorBleeding.inputs['Color'].default_value = mat_izquierda.default_value
 
+
+                                # Creo los drivers:
+                                ########################
+                                # Driver Brightness:
+                                driver = ColorBleeding.inputs['Brightness'].driver_add("default_value").driver
+                                driver.variables.new()
+                                driver.variables[0].name = 'ccb_brightness'
+                                driver.variables[0].type= 'SINGLE_PROP'
+                                driver.variables['ccb_brightness'].targets[0].id_type = 'SCENE'
+                                driver.variables['ccb_brightness'].targets[0].id = bpy.data.scenes['Scene']
+                                driver.variables['ccb_brightness'].targets[0].data_path = 'ccb.ccb_brightness'
+                                driver.expression = "ccb_brightness"
+                                # Driver Saturation:
+                                driver = ColorBleeding.inputs['Saturation'].driver_add("default_value").driver
+                                driver.variables.new()
+                                driver.variables[0].name = 'ccb_saturation'
+                                driver.variables[0].type= 'SINGLE_PROP'
+                                driver.variables['ccb_saturation'].targets[0].id_type = 'SCENE'
+                                driver.variables['ccb_saturation'].targets[0].id = bpy.data.scenes['Scene']
+                                driver.variables['ccb_saturation'].targets[0].data_path = 'ccb.ccb_saturation'
+                                driver.expression = "ccb_saturation"
+                                # Driver Factor:
+                                driver = ColorBleeding.inputs['Factor'].driver_add("default_value").driver
+                                driver.variables.new()
+                                driver.variables[0].name = 'ccb_factor'
+                                driver.variables[0].type= 'SINGLE_PROP'
+                                driver.variables['ccb_factor'].targets[0].id_type = 'SCENE'
+                                driver.variables['ccb_factor'].targets[0].id = bpy.data.scenes['Scene']
+                                driver.variables['ccb_factor'].targets[0].data_path = 'ccb.ccb_factor'
+                                driver.expression = "ccb_factor"
+
         return {'FINISHED'}
 
 
 all_classes = [
+    myProperties,
     CyclesColorBleedingAppend,
     CYCLES_PT_color_bleeding
 ]
@@ -112,6 +177,8 @@ def register():
             register_class(cls)
     else:
         register_class(all_classes[0])
+    
+    bpy.types.Scene.ccb = bpy.props.PointerProperty(type=myProperties)
 
 def unregister():
     from bpy.utils import unregister_class
@@ -121,6 +188,8 @@ def unregister():
             unregister_class(cls)
     else:
         unregister_class(all_classes[0])
+    
+    del bpy.types.Scene.ccb
 
 
 if __name__ == "__main__":
