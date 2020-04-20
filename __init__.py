@@ -26,19 +26,6 @@ def importNodeGroup(nodeGroup):
         bpy.ops.wm.append(filename=nodeGroup, directory=path)
 
 
-# def rm_node(mat):
-#     # sobreescribir el contexto:
-#     for window in bpy.context.window_manager.windows:
-#         screen = window.screen
-#         for area in screen.areas:
-#             if area.type == 'NODE_EDITOR':
-#                 override = {'window': window, 'screen': screen, 'area': area}
-#                 bpy.ops.node.select_all(override, action='DESELECT')
-#                 ColorBleeding = mat.material.node_tree.nodes['ColorBleeding']
-#                 ColorBleeding.select = True
-#                 ColorBleeding.delete_reconnect(override)
-
-
 class myProperties(PropertyGroup):
     ccb_brightness : bpy.props.FloatProperty(
         name="Brightness",
