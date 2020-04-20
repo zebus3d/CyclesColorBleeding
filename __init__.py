@@ -31,6 +31,7 @@ class myProperties(PropertyGroup):
         name="Brightness",
         soft_min=0.0,
         soft_max=1.0,
+        default=1.0,
         precision=3,
         description="")
 
@@ -38,6 +39,7 @@ class myProperties(PropertyGroup):
         name="Saturation",
         soft_min=0.0,
         soft_max=1.0,
+        default=0.85,
         precision=3,
         description="")
     
@@ -46,6 +48,7 @@ class myProperties(PropertyGroup):
         soft_min=0.0,
         soft_max=1.0,
         precision=3,
+        default=0.5,
         description="")
 
 
