@@ -1,5 +1,5 @@
 
-import bpy
+import bpy, os
 
 bl_info = {
     "name": "CyclesColorBleeding",
@@ -20,9 +20,8 @@ from bpy.types import (Panel, Operator, PropertyGroup)
 def importNodeGroup(nodeGroup):
     # si no esta ya importado el node group lo importo:
     if not any(ng.name == "ColorBleeding" for ng in bpy.data.node_groups):
-        blendFileMatLibs = "ColorBleeding.blend" 
-        path = bpy.utils.user_resource('SCRIPTS', "addons")
-        path = path + "/CyclesColorBleeding/" + blendFileMatLibs + "/NodeTree/"
+        blendFileMatLibs = "ColorBleeding.blend"
+        path = os.path.dirname(os.path.abspath(os.path.realpath(__file__))) + "/" + blendFileMatLibs + "/NodeTree/"
         bpy.ops.wm.append(filename=nodeGroup, directory=path)
 
 
