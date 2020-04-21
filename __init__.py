@@ -4,7 +4,7 @@ import bpy, os
 bl_info = {
     "name": "CyclesColorBleeding",
     "author": "Jorge Hernandez Melendez",
-    "version": (0, 1),
+    "version": (0, 2),
     "blender": (2, 83, 0),
     "location": "",
     "description": "Manage your color bleeding in Cycles",
