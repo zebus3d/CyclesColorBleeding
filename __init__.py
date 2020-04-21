@@ -22,8 +22,7 @@ def importNodeGroup(nodeGroup):
     if not any(ng.name == "ColorBleeding" for ng in bpy.data.node_groups):
         blendFileMatLibs = "ColorBleeding.blend"
         path = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
-        path = os.path.join(blendFileMatLibs, "NodeTree")
-        print(path)
+        path = os.path.join(path, blendFileMatLibs, "NodeTree")
         bpy.ops.wm.append(filename=nodeGroup, directory=path)
 
 
