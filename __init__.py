@@ -23,6 +23,7 @@ def importNodeGroup(nodeGroup):
         blendFileMatLibs = "ColorBleeding.blend"
         path = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
         path = os.path.join(blendFileMatLibs, "NodeTree")
+        print(path)
         bpy.ops.wm.append(filename=nodeGroup, directory=path)
 
 
